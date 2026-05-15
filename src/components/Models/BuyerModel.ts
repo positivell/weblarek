@@ -1,4 +1,4 @@
-import { IBuyer, TPayment } from '../../types';
+import { IBuyer, TPayment, TValidationErrors } from '../../types';
 
 export class BuyerModel {
   protected buyer: IBuyer = {
@@ -40,9 +40,9 @@ export class BuyerModel {
   }
 
  
-  validate(): Partial<Record<keyof IBuyer, string>> {
-    const errors: Partial<Record<keyof IBuyer, string>> = {};
-
+  validate(): TValidationErrors {
+    const errors: TValidationErrors = {};
+  
     if (!this.buyer.payment) {
       errors.payment = 'Не выбран способ оплаты';
     }
@@ -55,7 +55,7 @@ export class BuyerModel {
     if (!this.buyer.phone.trim()) {
       errors.phone = 'Укажите телефон';
     }
-
+  
     return errors;
   }
 }
