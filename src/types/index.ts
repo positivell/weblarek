@@ -1,4 +1,14 @@
+import { categoryMap, CDN_URL } from "../utils/constants";
+
+export const getImageUrl = (path: string) => {
+    return path.startsWith('http')
+        ? path
+        : `${CDN_URL}${path}`;
+};
+
 export type ApiPostMethods = 'POST' | 'PUT' | 'DELETE';
+
+export type CategoryCard = keyof typeof categoryMap;
 
 export interface IApi {
     get<T extends object>(uri: string): Promise<T>;
@@ -20,14 +30,14 @@ export interface IProduct {
 }
 
 export interface IBuyer {
-  payment: TPayment | "";
+  payment: TPayment ;
   email: string;
   phone: string;
   address: string;
 }
 
 export interface IOrder {
-  payment: TPayment;
+  payment: TPayment | "";
   email: string;
   phone: string;
   address: string;

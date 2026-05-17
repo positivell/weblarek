@@ -1,7 +1,9 @@
 import { IProduct } from '../../types';
+import { EventEmitter } from '../base/Events.ts';
 
 export class BasketModel {
   private _items: IProduct[] = [];
+  constructor(private events: EventEmitter) {}
 
   getItems(): IProduct[] {
     return this._items;
@@ -11,14 +13,17 @@ export class BasketModel {
     if (!this.contains(product.id)) {
       this._items.push(product);
     }
+    this.events.emit('cart:changed');
   }
 
   removeItem(id: string): void {
     this._items = this._items.filter(item => item.id !== id);
+    this.events.emit('cart:changed');
   }
 
   clear(): void {
     this._items = [];
+    this.events.emit('cart:changed');
   }
 
   getTotalPrice(): number {

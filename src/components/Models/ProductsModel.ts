@@ -1,12 +1,16 @@
 import { IProduct } from '../../types';
+import { EventEmitter } from '../base/Events';
 
 export class ProductsModel {
   private items: IProduct[] = [];
   private preview: IProduct | null = null;
 
-  setItems(items: IProduct[]): void {
-    this.items = items;
-  }
+  constructor(private events: EventEmitter) {}
+
+    setProducts(products: IProduct[]): void {
+        this.items = products;
+        this.events.emit('products:changed', this.items);
+    }
 
   getItems(): IProduct[] {
     return this.items;
@@ -16,9 +20,14 @@ export class ProductsModel {
     return this.items.find(item => item.id === id);
   }
 
-  setPreview(product: IProduct | null | undefined): void {
-    this.preview = product ?? null;
-  }
+  setPreview(id: string): void {
+    const product = this.getProductById(id);
+
+    if (product) {
+        this.preview = product;
+        this.events.emit('product:selected', product);
+    }
+}
 
   getPreview(): IProduct | null {
     return this.preview;

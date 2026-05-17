@@ -1,82 +1,250 @@
 import './scss/styles.scss';
-import { apiProducts } from './utils/data';
 import { API_URL } from './utils/constants';
 import { Api } from './components/base/Api';
 import { ProductsModel } from './components/Models/ProductsModel';
 import { BasketModel } from './components/Models/BasketModel';
 import { BuyerModel } from './components/Models/BuyerModel';
 import { LarekApi } from './components/Models/LarekApi';
+import { GalleryView } from './components/Views/galleryView';
+import { cloneTemplate, ensureElement } from "./utils/utils";
+import { EventEmitter } from './components/base/Events';
+import { IProduct } from './types';
+import { CardCatalog } from "./components/Views/cardCatalogView";
+import { CardPreview } from "./components/Views/cardPreview";
+import { Modal } from "./components/Views/modalView";
+import { Basket } from './components/Views/basketView';
+import { CardBasket } from './components/Views/cardBasket';
+import { Header } from './components/Views/header';
+import { Order } from './components/Views/order';
+import { Contact } from './components/Views/contact';
+import { OrderSuccess } from './components/Views/orderSucces';
+import { IOrder } from './types';
 
-
-const productsModel = new ProductsModel();
-const basketModel = new BasketModel();
-const buyerModel = new BuyerModel();
-
-productsModel.setItems(apiProducts.items);
-console.log('массив товаров:', productsModel.getItems());
-const foundProduct = productsModel.getProductById(apiProducts.items[0].id);
-console.log('найденный товар:', foundProduct);
-productsModel.setPreview(foundProduct);
-console.log('товар для предпросмотра:', productsModel.getPreview());
-
-console.log('предметы в корзине:', basketModel.getItems());
-basketModel.addItem(apiProducts.items[0]);
-basketModel.addItem(apiProducts.items[1]);
-console.log('предметы в корзине:', basketModel.getItems());
-console.log('количество:', basketModel.getCount());
-console.log('общая стоимость:', basketModel.getTotalPrice());
-console.log('есть ли товар с id 1:', basketModel.contains(apiProducts.items[0].id));
-basketModel.removeItem(apiProducts.items[0].id);
-console.log('после удаления:', basketModel.getItems());
-basketModel.clear();
-console.log('после очистки:', basketModel.getItems());
-
-buyerModel.setPayment('card');
-buyerModel.setAddress('ул. Тестовая, д. 1');
-buyerModel.setEmail('test@example.com');
-buyerModel.setPhone('+79991234567');
-console.log('данные покупателя:', buyerModel.getAll());
-console.log('валидация:', buyerModel.validate());
-buyerModel.clear();
-console.log('после очистки:', buyerModel.getAll());
-console.log('валидация:', buyerModel.validate());
+const events = new EventEmitter();
+const productsModel = new ProductsModel(events);
+const basketModel = new BasketModel(events);
+const buyerModel = new BuyerModel(events);
+const galleryView = new GalleryView(
+  ensureElement('.gallery')
+);
 
 const api = new Api(API_URL);
 const larekApi = new LarekApi(api);
+const previewTemplate = ensureElement<HTMLTemplateElement>('#card-preview');
+const preview = new CardPreview(
+  cloneTemplate(previewTemplate),
+  events
+);
 
-larekApi.getProducts()
-  .then(response => {
-    console.log('Ответ от сервера получен:', response);
-    productsModel.setItems(response.items);
-    console.log('Массив товаров сохранён в модели каталога:', productsModel.getItems());
-  })
-  .catch(error => {
-    console.error('Ошибка при запросе к серверу:', error);
-  });
+const modal = new Modal(
+  ensureElement<HTMLElement>('#modal-container'),
+  events
+);
 
-  
-buyerModel.setPayment('card');
-buyerModel.setAddress('ул. Тестовая, д. 1');
-buyerModel.setEmail('test@example.com');
-buyerModel.setPhone('+79991234567');
-basketModel.addItem(apiProducts.items[0]);
-basketModel.addItem(apiProducts.items[1]);
-  
-const orderData = {
-  payment: buyerModel.getAll().payment,
-  address: buyerModel.getAll().address,
-  email: buyerModel.getAll().email,
-  phone: buyerModel.getAll().phone,
-  items: basketModel.getItems().map(item => item.id),
-  total: basketModel.getTotalPrice()
+const basketTemplate = ensureElement<HTMLTemplateElement>('#basket');
+
+const basketView = new Basket(
+    cloneTemplate(basketTemplate),
+    events
+);
+
+const header = new Header(
+  ensureElement<HTMLElement>('.header'),
+  events
+);
+
+const successTemplate = ensureElement<HTMLTemplateElement>('#success');
+
+const successView = new OrderSuccess(
+    cloneTemplate(successTemplate)
+);
+
+successView.onClose = () => {
+    modal.close();
 };
 
-larekApi.postOrder(orderData)
-  .then(result => {
-      console.log('Заказ оформлен', result);
-      basketModel.clear();
-      buyerModel.clear();
-  })
-  .catch(error => {
-      console.error('Ошибка:', error);
+const orderTemplate = ensureElement<HTMLTemplateElement>('#order');
+const orderView = new Order(
+    cloneTemplate(orderTemplate),
+    {
+        onInput: (name, value) => {
+            if (name === 'address') buyerModel.setAddress(value);
+        },
+        onPayment: (method) => {
+            buyerModel.setPayment(method);
+        },
+        onSubmit: () => {
+            events.emit('order:next');
+        }
+    }
+);
+
+const contactTemplate = ensureElement<HTMLTemplateElement>('#contacts');
+const contactView = new Contact(
+    cloneTemplate(contactTemplate),
+    {
+        onInput: (name, value) => {
+            if (name === 'email') buyerModel.setEmail(value);
+            if (name === 'phone') buyerModel.setPhone(value);
+        },
+        onSubmit: () => {
+            events.emit('order:submit');
+        }
+    }
+);
+
+events.on('products:changed', (items: IProduct[]) => {
+  const template = ensureElement<HTMLTemplateElement>('#card-catalog');
+
+  const cards = items.map(item => {
+      const card = new CardCatalog(
+          cloneTemplate(template),
+          {
+              onClick: () => events.emit('product:select', { id: item.id })
+          }
+      );
+
+      return card.render({
+          title: item.title,
+          price: item.price,
+          image: item.image,
+          category: item.category
+      });
   });
+
+  galleryView.render(cards);
+});
+
+events.on('product:cartAction', () => {
+  const product = productsModel.getPreview();
+  if (!product) return;
+
+  if (basketModel.contains(product.id)) {
+      basketModel.removeItem(product.id);
+  } else {
+      basketModel.addItem(product);
+  }
+
+  events.emit('product:selected', product);
+});
+
+events.on('product:select', ({ id }: { id: string }) => {
+  productsModel.setPreview(id);
+});
+
+events.on('product:selected', (product: IProduct) => {
+  modal.setContent(
+      preview.render({
+          title: product.title,
+          image: product.image,
+          price: product.price,
+          category: product.category,
+          description: product.description,
+          productInCart: basketModel.contains(product.id)
+      })
+  );
+
+  modal.open();
+});
+
+events.on('cart:changed', () => {
+  header.render({
+      counter: basketModel.getCount()
+  });
+
+  const itemTemplate = ensureElement<HTMLTemplateElement>('#card-basket');
+
+  const items = basketModel.getItems().map((product, index) => {
+      const item = new CardBasket(
+          cloneTemplate(itemTemplate),
+          events,
+          product
+      );
+
+      return item.render({
+          index: index + 1,
+          title: product.title,
+          price: product.price ?? 0
+      });
+  });
+
+  basketView.items = items;
+  basketView.total = basketModel.getTotalPrice();
+});
+
+events.on('basket:open', () => {
+  modal.setContent( 
+      basketView.render() 
+  );
+
+  modal.open();
+});
+
+events.on('basket:remove', ({ id }: { id: string }) => {
+  basketModel.removeItem(id);
+});
+
+events.on('order:open', () => {
+  events.emit('buyer:changed');
+
+  modal.setContent(orderView.render());
+  modal.open();
+});
+
+events.on('order:next', () => {
+  events.emit('buyer:changed');
+
+  modal.setContent(contactView.render());
+});
+
+events.on('buyer:changed', () => {
+  const buyer = buyerModel.getAll();
+  const errors = buyerModel.validate();
+
+  orderView.render({
+      address: buyer.address,
+      payment: buyer.payment,
+      valid: !errors.address && !errors.payment,
+      error: [errors.address, errors.payment].filter(Boolean).join(', ')
+  });
+
+  contactView.render({
+      email: buyer.email,
+      phone: buyer.phone,
+      valid: !errors.email && !errors.phone,
+      error: [errors.email, errors.phone].filter(Boolean).join(', ')
+  });
+});
+
+events.on('order:submit', () => {
+  const orderData: IOrder = {
+      ...buyerModel.getAll(),
+      total: basketModel.getTotalPrice(),
+      items: basketModel.getItems().map(p => p.id)
+  };
+  
+  larekApi.postOrder(orderData)
+      .then((res) => {
+          console.log('Ответ сервера:', res);
+
+          basketModel.clear();
+          buyerModel.clear();
+
+          modal.setContent(
+              successView.render({ total: res.total })
+          );
+
+          modal.open();
+      })
+      .catch((err) => {
+          console.error('Ошибка запроса к серверу:', err);
+      });
+});
+
+larekApi.getProducts()
+    .then(response => {
+        productsModel.setProducts(response.items);
+    })
+    .catch(error => {
+        console.error('Ошибка запроса к серверу:', error);
+    });

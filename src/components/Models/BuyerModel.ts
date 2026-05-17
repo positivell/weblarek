@@ -1,27 +1,34 @@
 import { IBuyer, TPayment, TValidationErrors } from '../../types';
+import { EventEmitter } from '../base/Events';
 
 export class BuyerModel {
   protected buyer: IBuyer = {
-    payment: '',
+    payment: 'card',
     email: '',
     phone: '',
     address: ''
   };
 
+  constructor(private events: EventEmitter) {}
+
   setPayment(payment: TPayment): void {
     this.buyer.payment = payment;
+    this.events.emit('buyer:changed');
   }
   
   setAddress(address: string): void {
     this.buyer.address = address;
+    this.events.emit('buyer:changed');
   }
 
   setEmail(email: string): void {
     this.buyer.email = email;
+    this.events.emit('buyer:changed');
   }
 
   setPhone(phone: string): void {
     this.buyer.phone = phone;
+    this.events.emit('buyer:changed');
   }
 
 
@@ -32,14 +39,13 @@ export class BuyerModel {
  
   clear(): void {
     this.buyer = {
-      payment: '',
+      payment: 'card',
       email: '',
       phone: '',
       address: ''
     };
   }
 
- 
   validate(): TValidationErrors {
     const errors: TValidationErrors = {};
   
