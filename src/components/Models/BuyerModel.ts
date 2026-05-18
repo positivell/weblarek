@@ -3,7 +3,7 @@ import { EventEmitter } from '../base/Events';
 
 export class BuyerModel {
   protected buyer: IBuyer = {
-    payment: 'card',
+    payment: undefined as any,  
     email: '',
     phone: '',
     address: ''
@@ -15,7 +15,7 @@ export class BuyerModel {
     this.buyer.payment = payment;
     this.events.emit('buyer:changed');
   }
-  
+
   setAddress(address: string): void {
     this.buyer.address = address;
     this.events.emit('buyer:changed');
@@ -31,24 +31,23 @@ export class BuyerModel {
     this.events.emit('buyer:changed');
   }
 
-
   getAll(): IBuyer {
     return { ...this.buyer };
   }
 
- 
   clear(): void {
     this.buyer = {
-      payment: 'card',
+      payment: undefined as any, 
       email: '',
       phone: '',
       address: ''
     };
+    this.events.emit('buyer:changed'); ///
   }
 
   validate(): TValidationErrors {
     const errors: TValidationErrors = {};
-  
+
     if (!this.buyer.payment) {
       errors.payment = 'Не выбран способ оплаты';
     }
@@ -61,7 +60,7 @@ export class BuyerModel {
     if (!this.buyer.phone.trim()) {
       errors.phone = 'Укажите телефон';
     }
-  
+
     return errors;
   }
 }

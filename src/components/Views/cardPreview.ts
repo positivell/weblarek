@@ -10,7 +10,8 @@ interface ICardPreview {
     price: number | null;
     description: string;
     category: string;
-    productInCart: boolean;
+    buttonText: string;
+    buttonDisabled: boolean;
 }
 
 export class CardPreview extends BaseCard<ICardPreview> {
@@ -64,9 +65,11 @@ export class CardPreview extends BaseCard<ICardPreview> {
         }
     }
 
-    set productInCart(inCart: boolean) {
-    this.buttonElement.textContent = inCart
-        ? 'Удалить из корзины'
-        : 'В корзину';
+    set buttonText(value: string) {
+        this.buttonElement.textContent = value;
+    }
+
+    set buttonDisabled(value: boolean) {
+        this.buttonElement.disabled = value;
     }
 }

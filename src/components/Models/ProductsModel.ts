@@ -7,10 +7,10 @@ export class ProductsModel {
 
   constructor(private events: EventEmitter) {}
 
-    setProducts(products: IProduct[]): void {
-        this.items = products;
-        this.events.emit('products:changed', this.items);
-    }
+  setProducts(products: IProduct[]): void {
+    this.items = products;
+    this.events.emit('products:changed'); //
+  }
 
   getItems(): IProduct[] {
     return this.items;
@@ -24,10 +24,10 @@ export class ProductsModel {
     const product = this.getProductById(id);
 
     if (product) {
-        this.preview = product;
-        this.events.emit('product:selected', product);
+      this.preview = product;
+      this.events.emit('product:selected'); //
     }
-}
+  }
 
   getPreview(): IProduct | null {
     return this.preview;

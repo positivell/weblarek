@@ -1,7 +1,15 @@
-export class GalleryView {
-    constructor(private container: HTMLElement) {}
+import { Component } from "../base/Component";
 
-    render(items: HTMLElement[]) {
+interface IGallery {
+    items: HTMLElement[];
+}
+
+export class GalleryView extends Component<IGallery> {
+    constructor(container: HTMLElement) {
+        super(container);
+    }
+
+    set items(items: HTMLElement[]) {
         this.container.replaceChildren(...items);
     }
 }

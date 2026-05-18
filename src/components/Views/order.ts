@@ -48,12 +48,4 @@ export class Order extends BaseForm<IOrderView, OrderEvents> {
         this.cardBtn.classList.toggle('button_alt-active', value === 'card');
         this.cashBtn.classList.toggle('button_alt-active', value === 'cash');
     }
-
-    set valid(value: boolean) {
-        this.submitBtn.disabled = !value;
-    }
-
-    set error(value: string) {
-        this.errorSpan.textContent = value;
-    }
 }
