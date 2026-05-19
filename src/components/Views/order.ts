@@ -4,7 +4,7 @@ import { BaseForm } from "./baseForm";
 
 interface IOrderView {
     address: string;
-    payment: TPayment;
+    payment: TPayment | '';
     valid: boolean;
     error?: string;
 }
@@ -44,7 +44,7 @@ export class Order extends BaseForm<IOrderView, OrderEvents> {
         this.addressInput.value = value;
     }
 
-    set payment(value: TPayment) {
+    set payment(value: TPayment | '') {
         this.cardBtn.classList.toggle('button_alt-active', value === 'card');
         this.cashBtn.classList.toggle('button_alt-active', value === 'cash');
     }

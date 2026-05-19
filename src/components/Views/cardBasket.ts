@@ -5,17 +5,15 @@ interface IBasketItem {
     index: number;
     title: string;
     price: number;
-    id: string;
 }
 
 interface ICardBasketActions {
-    onClick: (id: string) => void;
+    onClick: () => void;
 }
 
 export class CardBasket extends BaseCard<IBasketItem> {
     protected indexElement: HTMLElement;
     protected deleteButton: HTMLButtonElement;
-    private _id: string = '';
 
     constructor(
         container: HTMLElement,
@@ -29,14 +27,8 @@ export class CardBasket extends BaseCard<IBasketItem> {
         this.deleteButton = ensureElement<HTMLButtonElement>('.basket__item-delete', container);
 
         if (actions?.onClick) {
-            this.deleteButton.addEventListener('click', () => {
-                actions.onClick(this._id);
-            });
+            this.deleteButton.addEventListener('click', actions.onClick);
         }
-    }
-
-    set id(value: string) {
-        this._id = value;
     }
 
     set index(value: number) {

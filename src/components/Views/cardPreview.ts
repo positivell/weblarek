@@ -41,14 +41,6 @@ export class CardPreview extends BaseCard<ICardPreview> {
 
     set price(value: number | null) {
         super.price = value;
-
-        if (value === null) {
-            this.buttonElement.textContent = 'Недоступно';
-            this.buttonElement.disabled = true;
-        }
-        else {
-            this.buttonElement.disabled = false
-        }
     }
 
     set description(value: string) {

@@ -3,7 +3,7 @@ import { EventEmitter } from '../base/Events';
 
 export class BuyerModel {
   protected buyer: IBuyer = {
-    payment: undefined as any,  
+    payment: '',  
     email: '',
     phone: '',
     address: ''
@@ -37,12 +37,12 @@ export class BuyerModel {
 
   clear(): void {
     this.buyer = {
-      payment: undefined as any, 
+      payment: '', 
       email: '',
       phone: '',
       address: ''
     };
-    this.events.emit('buyer:changed'); ///
+    this.events.emit('buyer:changed'); 
   }
 
   validate(): TValidationErrors {

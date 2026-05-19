@@ -96,30 +96,10 @@ events.on('order:input', ({ name, value }: { name: string; value: string }) => {
     if (name === 'address') {
         buyerModel.setAddress(value);
     }
-    
-    const buyer = buyerModel.getAll();
-    const errors = buyerModel.validate();
-
-    orderView.render({
-        address: buyer.address,
-        payment: buyer.payment,
-        valid: !errors.address && !errors.payment,
-        error: [errors.address, errors.payment].filter(Boolean).join(', ')
-    });
 });
 
 events.on('order:payment', ({ method }: { method: TPayment }) => {
     buyerModel.setPayment(method);
-    
-    const buyer = buyerModel.getAll();
-    const errors = buyerModel.validate();
-
-    orderView.render({
-        address: buyer.address,
-        payment: buyer.payment,
-        valid: !errors.address && !errors.payment,
-        error: [errors.address, errors.payment].filter(Boolean).join(', ')
-    });
 });
 
 events.on('contacts:input', ({ name, value }: { name: string; value: string }) => {
@@ -129,9 +109,18 @@ events.on('contacts:input', ({ name, value }: { name: string; value: string }) =
     if (name === 'phone') {
         buyerModel.setPhone(value);
     }
-    
+});
+
+events.on('buyer:changed', () => {
     const buyer = buyerModel.getAll();
     const errors = buyerModel.validate();
+
+    orderView.render({
+        address: buyer.address,
+        payment: buyer.payment,
+        valid: !errors.address && !errors.payment,
+        error: [errors.address, errors.payment].filter(Boolean).join(', ')
+    });
 
     contactView.render({
         email: buyer.email,
@@ -140,6 +129,15 @@ events.on('contacts:input', ({ name, value }: { name: string; value: string }) =
         error: [errors.email, errors.phone].filter(Boolean).join(', ')
     });
 });
+
+events.on('order:open', () => {
+    modal.setContent(orderView.render());
+    modal.open();
+  });
+  
+  events.on('order:next', () => {
+    modal.setContent(contactView.render());
+  });
 
 events.on('products:changed', () => {
   const items = productsModel.getItems();
@@ -186,7 +184,11 @@ events.on('product:selected', () => {
   if (!product) return;
 
   const isInCart = basketModel.contains(product.id);
-  const buttonText = isInCart ? 'Удалить из корзины' : 'В корзину';
+  const buttonText = product.price === null 
+    ? 'Недоступно' 
+    : isInCart 
+        ? 'Удалить из корзины' 
+        : 'В корзину';
   const buttonDisabled = product.price === null;
 
   modal.setContent(
@@ -210,26 +212,24 @@ events.on('cart:changed', () => {
     });
   
     const itemTemplate = ensureElement<HTMLTemplateElement>('#card-basket');
-  
     const items = basketModel.getItems().map((product, index) => {
-        const item = new CardBasket(
-            cloneTemplate(itemTemplate),
-            {
-                onClick: (id: string) => events.emit('basket:remove', { id })
-            }
-        );
-  
-        return item.render({
-            id: product.id,
-            index: index + 1,
-            title: product.title,
-            price: product.price ?? 0
-        });
+    const item = new CardBasket(
+        cloneTemplate(itemTemplate),
+        {
+            onClick: () => events.emit('basket:remove', { id: product.id })
+        }
+    );
+
+    return item.render({
+        index: index + 1,
+        title: product.title,
+        price: product.price ?? 0
+    });
     });
   
     basketView.items = items;
     basketView.total = basketModel.getTotalPrice();
-  });
+    });
 
 events.on('basket:open', () => {
   modal.setContent( 
@@ -241,35 +241,6 @@ events.on('basket:open', () => {
 
 events.on('basket:remove', ({ id }: { id: string }) => {
   basketModel.removeItem(id);
-});
-
-events.on('order:open', () => {
-  const buyer = buyerModel.getAll();
-  const errors = buyerModel.validate();
-
-  orderView.render({
-      address: buyer.address,
-      payment: buyer.payment,
-      valid: !errors.address && !errors.payment,
-      error: [errors.address, errors.payment].filter(Boolean).join(', ')
-  });
-
-  modal.setContent(orderView.render());
-  modal.open();
-});
-
-events.on('order:next', () => {
-  const buyer = buyerModel.getAll();
-  const errors = buyerModel.validate();
-
-  contactView.render({
-      email: buyer.email,
-      phone: buyer.phone,
-      valid: !errors.email && !errors.phone,
-      error: [errors.email, errors.phone].filter(Boolean).join(', ')
-  });
-
-  modal.setContent(contactView.render());
 });
 
 events.on('order:submit', () => {
